@@ -87,8 +87,8 @@ function JSONParser (input) {
 }
 
 const parseJSON = data => {
-	let value = (typeof data == 'object') ? JSONParser(data.toString()) : valueParser(data);
-	return value && !value[1] ? value[0] : null;
+	const [parsed, garbage] = ((typeof data == 'object') ? JSONParser(`${data}`) : valueParser(data)) || [null];
+	return !garbage && parsed;
 }
 
 // const data = fs.readFileSync(`./jsontest/pass4.json`);
