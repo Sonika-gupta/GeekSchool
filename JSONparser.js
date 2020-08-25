@@ -38,7 +38,7 @@ function arrayParser (input) {
 	input = spaceParser(input.slice(1));
 	let array = [], value;
 	while(input && input[0] != ']') {
-		value = JSONParser(input) || valueParser(input);
+		value = valueParser(input);
 		if(!value) return null;
 		input = spaceParser(value[1]);
 		if(input[0] == ',') {
@@ -63,7 +63,7 @@ function objectParser (input) {
 		if(input[0] != ':') return null;
 
 		input = spaceParser(input.slice(1));
-		value = JSONParser(input) || valueParser(input);
+		value = valueParser(input);
 			
 		if(!value) return null;
 		input = spaceParser(value[1]);
@@ -78,20 +78,15 @@ function objectParser (input) {
 }
 
 function valueParser(input) {
-	input = spaceParser(input);
-	return nullParser(input) || booleanParser(input) || numberParser(input) || stringParser(input);
-}
-function JSONParser (input) {
-	input = spaceParser(input);
-	return arrayParser(input) || objectParser(input);
+	return arrayParser(input) || objectParser(input) || nullParser(input) || booleanParser(input) || numberParser(input) || stringParser(input);
 }
 
 const parseJSON = data => {
-	const [parsed, garbage] = ((typeof data == 'object') ? JSONParser(`${data}`) : valueParser(data)) || [null];
+	const [parsed, garbage] = valueParser(`${data}`) || [null];
 	return !garbage && parsed;
 }
 
-// const data = fs.readFileSync(`./jsontest/pass4.json`);
+// const data = fs.readFileSync(`./jsontest/pass1.json`);
 // console.log(parseJSON(data));
 // console.log(JSON.parse(data));
 fs.readdir('./jsontest', (err, files) => {
