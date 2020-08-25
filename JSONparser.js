@@ -3,19 +3,6 @@ var fs = require('fs');
 const spaceParser = input => {
 	return input && input.replace(/^\s+|\s+$/, '');
 }
-const commaParser = input => {
-	let matched = input.match(/^(\"[^"]*\",|[^]+?,)/);
-	return matched && [matched[0], input.slice(matched[0].length)];
-}
-const arrayEndParser = input => {
-	let matched = input.match(/^(\"[^"]*\"\s*\]|[^",]+?\])/);
-	return matched && [matched[0], input.slice(matched[0].length)];
-}
-const objectEndParser = input => {
-	let matched = input.match(/^(\"[^"]*\"\s*\}|[^",]+?\})/);
-	return matched && [matched[0], input.slice(matched[0].length)];
-}
-
 const nullParser = input => {
 	if(!input.startsWith('null')) return null;
 	return [null, input.slice(4)];
@@ -31,31 +18,34 @@ const numberParser = input => {
 	return matched && [Number(matched[0]), input.slice(matched[0].length)];
 }
 const stringParser = input => {
-	let matched = input.match(/^"(?:[^\\"\n\t]|(?:\\(["\\\/bfnrt]|u[0-9A-Fa-f]{4})))*"/);
-	return matched && [matched[0].slice(1, -1), input.slice(matched[0].length)];
+	let matched = input.match(/^"(?:[^\\"\n\t]|(?:\\(?<special>["\\\/bfnrt]|u[0-9A-Fa-f]{4})))*"/);
+	if(matched) {
+		var parsed = matched[0].slice(1, -1)
+				.replace(/\\\"/g, '"')
+				.replace(/\\\\/g, '\\')
+				.replace(/\\n/g, '\n')
+				.replace(/\\t/g, '\t')
+				.replace(/\\b/g, '\b')
+				.replace(/\\f/g, '\f')
+				.replace(/\\r/g, '\r')
+				.replace(/\\\//g, '\/')
+				.replace(/\\u[\d\w]{4}/g, match => String.fromCharCode(parseInt(match.slice(2), 16)));
+	}
+	return matched && [parsed, input.slice(matched[0].length)];
 }
 function arrayParser (input) {
 	if(input[0] != '[') return null;
 	input = spaceParser(input.slice(1));
 	let array = [], value, open = true;
 	while(input && open && input[0] != ']') {
-		value = JSONParser(input);
-		if(!value) {
-			var str = arrayEndParser(input) || commaParser(input);
-			if(!str) return null;
-
-			if(str[0].slice(-1) == ']') open = false;
-			input = spaceParser(str[1]);
-			if(str[0].slice(-1) == ',' && input[0] == ']') return null;
-			value = valueParser(str[0].slice(0, -1));
-			if(!value || value[1]) return null;
+		value = JSONParser(input) || valueParser(input);
+		if(!value) return null;
+		input = spaceParser(value[1]);
+		if(input[0] == ',') {
+			input = spaceParser(input.slice(1));
+			if(input[0] == ']') return null;
 		}
-		else {
-			input = spaceParser(value[1]);
-			if(input[0] == ',') {
-					input = input.slice(1);
-			}
-		}
+		else if(input[0] != ']') return null;
 		array.push(value[0]);
 	}
 	return open ? (input ? [array, input.slice(1)] : null) : [array, input];
@@ -73,22 +63,15 @@ function objectParser (input) {
 		if(input[0] != ':') return null;
 
 		input = spaceParser(input.slice(1));
-		value = JSONParser(input);
-		if(!value) {
-			var str = objectEndParser(input) || commaParser(input);
-			if(!str) return null;
-			if(str[0].slice(-1) == '}') open = false;
-			input = spaceParser(str[1]);
-			if(str[0].slice(-1) == ',' && input[0] == '}') return null;
-
-			value = valueParser(str[0].slice(0, -1));
-			if(!value || value[1]) return null;
+		value = JSONParser(input) || valueParser(input);
+			
+		if(!value) return null;
+		input = spaceParser(value[1]);
+		if(input[0] == ',') {
+			input = spaceParser(input.slice(1));
+			if(input == '}') return null;
 		}
-		else {
-			input = spaceParser(value[1]);
-			if(input[0] == ',')
-					input = spaceParser(input.slice(1));
-		}
+		else if(input[0] != '}') return null;
 		object[key[0]] = value[0];
 	}
 	return open ? (input ? [object, input.slice(1)] : null) : [object, input];
@@ -107,13 +90,19 @@ const parseJSON = data => {
 	let value = (typeof data == 'object') ? JSONParser(data.toString()) : valueParser(data);
 	return value && !value[1] ? value[0] : null;
 }
-fs.readdir('./testfiles', (err, files) => {
+
+// const data = fs.readFileSync(`./jsontest/pass4.json`);
+// console.log(parseJSON(data));
+// console.log(JSON.parse(data));
+fs.readdir('./jsontest', (err, files) => {
 	if (err)
 			console.log(err);
 	else {
 		files.forEach(file => {
 			console.log(file);
-			console.log(parseJSON(fs.readFileSync(`./testfiles/${file}`)));
+			const data = fs.readFileSync(`./jsontest/${file}`);
+			console.log(parseJSON(data));
+			// console.log(JSON.parse(data));
 		})
 	}
 });
