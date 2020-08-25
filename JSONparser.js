@@ -14,11 +14,11 @@ const booleanParser = input => {
 }
 const numberParser = input => {
 	input = spaceParser(input);
-	let matched = input.match(/^-?(0|[1-9]\d*)(?:\.\d+)?(?:(e|E)(-|\+)?\d+)?/);
+	const matched = input.match(/^-?(0|[1-9]\d*)(?:\.\d+)?(?:(e|E)(-|\+)?\d+)?/);
 	return matched && [Number(matched[0]), input.slice(matched[0].length)];
 }
 const stringParser = input => {
-	let matched = input.match(/^"(?:[^\\"\n\t]|(?:\\(?<special>["\\\/bfnrt]|u[0-9A-Fa-f]{4})))*"/);
+	const matched = input.match(/^"(?:[^\\"\n\t]|(?:\\(?<special>["\\\/bfnrt]|u[0-9A-Fa-f]{4})))*"/);
 	if(matched) {
 		var parsed = matched[0].slice(1, -1)
 				.replace(/\\\"/g, '"')
@@ -36,8 +36,8 @@ const stringParser = input => {
 function arrayParser (input) {
 	if(input[0] != '[') return null;
 	input = spaceParser(input.slice(1));
-	let array = [], value, open = true;
-	while(input && open && input[0] != ']') {
+	let array = [], value;
+	while(input && input[0] != ']') {
 		value = JSONParser(input) || valueParser(input);
 		if(!value) return null;
 		input = spaceParser(value[1]);
@@ -48,14 +48,14 @@ function arrayParser (input) {
 		else if(input[0] != ']') return null;
 		array.push(value[0]);
 	}
-	return open ? (input ? [array, input.slice(1)] : null) : [array, input];
+	return input ? [array, input.slice(1)] : null;
 }
 function objectParser (input) {
 	if(input[0] != '{') return null;
 	input = spaceParser(input.slice(1));
-	let object = {}, key, value, open = true;
+	let object = {}, key, value;
 
-	while(input && open && input[0]!='}') {
+	while(input && input[0]!='}') {
 		key = stringParser(input);
 		if(!key) return null;
 
@@ -74,7 +74,7 @@ function objectParser (input) {
 		else if(input[0] != '}') return null;
 		object[key[0]] = value[0];
 	}
-	return open ? (input ? [object, input.slice(1)] : null) : [object, input];
+	return input ? [object, input.slice(1)] : null;
 }
 
 function valueParser(input) {
