@@ -1,31 +1,30 @@
-function objectStringify(input) {
-    if(!input || typeof input != 'object') return null;
-    let stringified = [];
-    if(Array.isArray(input)) {
-        for(let i = 0; i< input.length; i++) {
-            stringified[i] =  JSONstringify(input[i]) || "null";
-        }
-        return `[${stringified}]`;
+function objectStringify (input) {
+  if (!input || typeof input !== 'object') return null
+  const stringified = []
+  if (Array.isArray(input)) {
+    for (let i = 0; i < input.length; i++) {
+      stringified[i] = JSONstringify(input[i]) || 'null'
     }
-    else {
-        for(let [key, value] of Object.entries(input)) {
-            stringified.push(stringify(key)+':'+(JSONstringify(value)||"null"));
-        }
-        return `{${stringified}}`;
+    return `[${stringified}]`
+  } else {
+    for (const [key, value] of Object.entries(input)) {
+      stringified.push(stringify(key) + ':' + (JSONstringify(value) || 'null'))
     }
+    return `{${stringified}}`
+  }
 }
 const stringify = (input) => {
-    if(typeof input == "string") return '"' + input + '"';
+  if (typeof input === 'string') return '"' + input + '"'
 }
 const generalStringify = (input) => {
-    const types = ["number", "boolean", "object"];
-    const special = ["NaN", "Infinity", "-Infinity"];
-    if(!types.includes(typeof input)) return undefined;
-    if(special.includes(String(input))) return "null";
-    return String(input);
+  const types = ['number', 'boolean', 'object']
+  const special = ['NaN', 'Infinity', '-Infinity']
+  if (!types.includes(typeof input)) return undefined
+  if (special.includes(String(input))) return 'null'
+  return String(input)
 }
-function JSONstringify(input) {
-    return objectStringify(input) || stringify(input) || generalStringify(input);
+function JSONstringify (input) {
+  return objectStringify(input) || stringify(input) || generalStringify(input)
 }
 
 // let input2 = [1,"yo",34, {a: 1, b: "hi"}];
