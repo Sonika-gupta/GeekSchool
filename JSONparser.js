@@ -1,5 +1,3 @@
-var fs = require('fs')
-
 const spaceParser = input => {
   return input && input.replace(/^\s+|\s+$/, '')
 }
@@ -19,19 +17,18 @@ const numberParser = input => {
 }
 const stringParser = input => {
   const matched = input.match(/^"(?:[^\\"\n\t]|(?:\\(?<special>["/bfnrt\\]|u[0-9A-Fa-f]{4})))*"/)
-  if (matched) {
-    var parsed = matched[0].slice(1, -1)
-      .replace(/\\"/g, '"')
-      .replace(/\\\\/g, '\\')
-      .replace(/\\n/g, '\n')
-      .replace(/\\t/g, '\t')
-      .replace(/\\b/g, '\b')
-      .replace(/\\f/g, '\f')
-      .replace(/\\r/g, '\r')
-      .replace(/\\\//g, '/')
-      .replace(/\\u[\d\w]{4}/g, match => String.fromCharCode(parseInt(match.slice(2), 16)))
-  }
-  return matched && [parsed, input.slice(matched[0].length)]
+  if (!matched) return null
+  const parsed = matched[0].slice(1, -1)
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, '\\')
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\b/g, '\b')
+    .replace(/\\f/g, '\f')
+    .replace(/\\r/g, '\r')
+    .replace(/\\\//g, '/')
+    .replace(/\\u[\d\w]{4}/g, match => String.fromCharCode(parseInt(match.slice(2), 16)))
+  return [parsed, input.slice(matched[0].length)]
 }
 function arrayParser (input) {
   if (input[0] !== '[') return null
@@ -76,24 +73,24 @@ function objectParser (input) {
 }
 
 function valueParser (input) {
+  input = spaceParser(input)
   return arrayParser(input) || objectParser(input) || nullParser(input) || booleanParser(input) || numberParser(input) || stringParser(input)
 }
 
 const parseJSON = data => {
-  const [parsed, garbage] = valueParser(`${data}`) || [null]
-  return !garbage && parsed
+  // [parsed, garbage] = result
+  const result = valueParser(data)
+  return result && !result[1] && result[0]
 }
-
-// const data = fs.readFileSync(`./jsontest/pass1.json`);
-// console.log(parseJSON(data));
-// console.log(JSON.parse(data));
+/*
+const fs = require('fs')
 fs.readdir('./jsontest', (err, files) => {
   if (err) { console.log(err) } else {
     files.forEach(file => {
-      console.log(file)
-      const data = fs.readFileSync(`./jsontest/${file}`)
-      console.log(parseJSON(data))
-      // console.log(JSON.parse(data));
+      const data = fs.readFileSync(`./jsontest/${file}`, 'utf-8')
+      console.log(file, parseJSON(data) || 'Invalid JSON')
     })
   }
-})
+}) */
+
+module.exports = parseJSON
